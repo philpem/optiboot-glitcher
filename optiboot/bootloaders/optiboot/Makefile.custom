@@ -16,3 +16,47 @@ ifndef PRODUCTION
 	mv $(PROGRAM)_$(CHIP).lst $(PROGRAM)_$(TARGET).lst
 endif
 
+
+HELPTEXT += "target glitcher      - Whiteboard Glitcher\n"
+glitcher: TARGET = $@
+glitcher: CHIP = atmega328
+glitcher:
+	"$(MAKE)" $(CHIP) AVR_FREQ=14318180L LED=D6 BAUD_RATE=57600
+	mv $(PROGRAM)_$(CHIP).hex $(PROGRAM)_$(TARGET).hex
+ifndef PRODUCTION
+	mv $(PROGRAM)_$(CHIP).lst $(PROGRAM)_$(TARGET).lst
+endif
+
+
+HELPTEXT += "target atmega328_14*    - ATmega328, ATmega328p, ATmega328pb 14.31818MHz 57600bd (glitcher)\n"
+atmega328_14: TARGET = atmega328
+atmega328_14: MCU_TARGET = atmega328p
+atmega328_14: CFLAGS += $(COMMON_OPTIONS)
+atmega328_14: AVR_FREQ ?= 14318180L
+ifndef BIGBOOT
+atmega328_14: LDSECTIONS  = -Wl,--section-start=.text=0x7e00 -Wl,--section-start=.version=0x7ffe
+else
+# bigboot version is 1k long; starts earlier
+atmega328_14: LDSECTIONS  = -Wl,--section-start=.text=0x7c00 -Wl,--section-start=.version=0x7ffe
+endif
+atmega328_14: $(PROGRAM)_atmega328.hex
+ifndef PRODUCTION
+atmega328_14: $(PROGRAM)_atmega328.lst
+endif
+
+atmega328_14_isp: atmega328
+atmega328_14_isp: TARGET = atmega328
+atmega328_14_isp: MCU_TARGET = atmega328p
+ifndef BIGBOOT
+# 512 byte boot, SPIEN
+atmega328_14_isp: HFUSE ?= DE
+else
+# 1k byte boot, SPIEN
+atmega328_14_isp: HFUSE ?= DC
+endif
+# Low power xtal (16MHz) 16KCK/14CK+65ms
+atmega328_14_isp: LFUSE ?= FF
+# 2.7V brownout
+atmega328_14_isp: EFUSE ?= FD
+atmega328_14_isp: isp
+
